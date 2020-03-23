@@ -5,38 +5,44 @@ function eval() {
 
 function expressionCalculator(expr) {
     // write your solution here
-    expr = expr.trim();
+    expr = expr.split(' ').join('');
     let arr = [];
+
     let stecNum = [];
     let stecOper = [];
+    Array.prototype.last = function(n) {
+        return this[this.length-n];
+    }
+
     let strNum = '1234567890';
     let strOper = '()+-*/';
     let temp = '';
+    let result = 0;
+
     let prior = {
+        ')': 0,
+        '(': 0,
         '+': 1,
         '-': 1,
         '*': 2,
         '/': 2
     };
-    let result = 0;
-
+    
     let calc = {
-        '+': addit = (a,b) => {
+        '+': (a,b) => {
             return a+b;
         },
-        '-': subtract = (a,b) => {
+        '-': (a,b) => {
             return a-b;
         },
-        '*': multy = (a,b) => {
+        '*': (a,b) => {
             return a*b;
         },
-        '/': divis = (a,b) => {
+        '/': (a,b) => {
             return a/b;
         }
-
     }
     
-
     for(let i=0; i<expr.length; i++) {
         if(strNum.includes(expr[i])) {
             temp += expr[i];
@@ -50,40 +56,71 @@ function expressionCalculator(expr) {
                 arr.push(expr[i]);
             }
         }
-        if(i==expr.length-1) {
+
+        if(i==expr.length-1 && temp.length>0) {
             arr.push(parseInt(temp));
             temp = '';
-        }
-        
+        }       
     }
-    for(let j=0; j<arr.length; j++) {
-        if(typeof arr[j] == "number") {
-            stecNum.push(arr[j]);
-        } else {
-            if(stecOper.length==0 || prior[stecOper[stecOper.length-1]]<=prior[arr[j]]) {
-                stecOper.push(arr[j]);
-            } else {
-                let tempRes = calc[stecOper[stecOper.length-1]](stecNum[stecNum.length-2],stecNum[stecNum.length-1]);
-                stecOper.splice(-1,1);
-                stecNum.splice(-2,2);
-                stecNum.push(tempRes);
-                j--;
-            }
+
+    for(let i=0; i<arr.length; i++) {
+        
+        if(typeof arr[i] == "number") {
+            stecNum.push(arr[i]);
             
         }
-        if(j==arr.length-1) {
-            for(let a=0; a<stecOper.length; a++) {
-                let tempRes = calc[stecOper[stecOper.length-1]](stecNum[stecNum.length-2],stecNum[stecNum.length-1]);
-                stecOper.splice(-1,1);
-                stecNum.splice(-2,2);
+
+        if(typeof arr[i] == "string") {
+            if(arr[i] == '(') {
+                stecOper.push(arr[i]);
+                continue;
+            }
+
+            if(arr[i] == ')') {
+                if(stecOper.last(1) == '(') {
+                    stecOper.splice(-1, 1);
+                    continue;
+                }
+                
+                if(stecOper.length>0) {
+                    let tempRes = calc[stecOper.last(1)](stecNum.last(2), stecNum.last(1));
+                    stecNum.splice(-2, 2);
+                    stecOper.splice(-1, 1);
+                    stecNum.push(tempRes);
+                    i--;
+                    continue;
+                } 
+                
+                throw "ExpressionError: Brackets must be paired";
+            }
+
+            if(stecOper.length == 0 || prior[stecOper.last(1)] < prior[arr[i]]) {
+                stecOper.push(arr[i]);
+                continue;
+            }
+
+            if(prior[stecOper.last(1)] >= prior[arr[i]]) {
+                let tempRes = calc[stecOper.last(1)](stecNum.last(2), stecNum.last(1));
+                stecNum.splice(-2, 2);
+                stecOper.splice(-1, 1);
+                stecNum.push(tempRes);
+                i--;
+            }
+        }
+        if(i == arr.length-1) {
+            for(let j=stecOper.length-1; j>-1; j--) {
+                let tempRes = calc[stecOper.last(1)](stecNum.last(2), stecNum.last(1));
+                stecNum.splice(-2, 2);
+                stecOper.splice(-1, 1);
                 stecNum.push(tempRes);
             }
-            result = stecNum[0];
         }
     }
-    console.log(result);
+    result = stecNum[0];
+    console.log(arr);
     console.log(stecNum);
     console.log(stecOper);
+
     if(result==Infinity) {
         throw Error("TypeError: Division by zero.");
     }
